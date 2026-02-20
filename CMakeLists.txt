@@ -20,7 +20,7 @@ endif()
 # for filesystem functionality from C++20
 set(CMAKE_CXX_STANDARD 20)
 
-if(MACOS)
+if(MACOS OR LINUX)
     find_package(OpenGL REQUIRED)
     include_directories(${OPENGL_INCLUDE_DIR})
     find_package(glfw3 REQUIRED)
@@ -70,7 +70,7 @@ add_executable(demo Application.cpp
                 )
 
 if(MACOS OR LINUX)
-    target_link_libraries(demo ${OPENGL_gl_LIBRARY} glfw)
+    target_link_libraries(demo OpenGL::GL glfw)
 elseif(WINDOWS)
     # Windows: Link DirectX11 and required Windows libraries
     target_link_libraries(demo 
