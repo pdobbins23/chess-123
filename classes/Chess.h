@@ -3,6 +3,7 @@
 #include "Game.h"
 #include "Grid.h"
 #include "Bitboard.h"
+#include <vector>
 
 constexpr int pieceSize = 80;
 
@@ -41,6 +42,8 @@ private:
 
     BitboardElement knightMoves(int square);
     BitboardElement kingMoves(int square);
+
+    std::vector<BitMove> generateMoves(int player);
 
     Grid* _grid;
 };

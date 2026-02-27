@@ -25,3 +25,9 @@ Implemented move validation for pawns, knights, and kings in `canBitMoveFromTo()
 - **Pawns**: Can move forward one square, forward two squares from their starting rank (rank 2 for white, rank 7 for black), and capture diagonally. Forward moves are blocked if the destination or intermediate square is occupied. Diagonal moves are only allowed when an enemy piece is present.
 - **Knights**: Uses the provided `BitboardElement` class to generate an L-shaped move mask from the source square, then checks if the destination bit is set. Knights can jump over other pieces.
 - **King**: Uses `BitboardElement` to generate a mask of all 8 adjacent squares, then checks if the destination bit is set.
+
+### Screenshots
+
+![Chessboard with pieces in starting position](Screenshot1.png)
+
+![Move generator output showing 20 legal moves for white](Screenshot2.png)

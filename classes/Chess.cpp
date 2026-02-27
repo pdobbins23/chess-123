@@ -42,6 +42,20 @@ void Chess::setUpBoard() {
   _grid->initializeChessSquares(pieceSize, "boardsquare.png");
   FENtoBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
 
+  std::vector<BitMove> moves = generateMoves(0);
+  std::cout << "Generated " << moves.size() << " moves for white:" << std::endl;
+  const char *pieceNames[] = {"", "Pawn", "Knight", "Bishop", "Rook", "Queen", "King"};
+  const char *files = "abcdefgh";
+  for (size_t i = 0; i < moves.size(); i++) {
+    int fromCol = moves[i].from % 8;
+    int fromRow = moves[i].from / 8;
+    int toCol = moves[i].to % 8;
+    int toRow = moves[i].to / 8;
+    std::cout << (i + 1) << ". " << pieceNames[moves[i].piece]
+              << " " << files[fromCol] << (fromRow + 1)
+              << " -> " << files[toCol] << (toRow + 1) << std::endl;
+  }
+
   startGame();
 }
 
@@ -208,6 +222,52 @@ bool Chess::canKingMove(ChessSquare &src, ChessSquare &dst) {
 
   BitboardElement moves = kingMoves(srcIndex);
   return moves.getData() & (1ULL << dstIndex);
+}
+
+std::vector<BitMove> Chess::generateMoves(int player) {
+  std::vector<BitMove> moves;
+  int colorTag = player * 128;
+
+  _grid->forEachSquare([&](ChessSquare *srcSquare, int x, int y) {
+    Bit *bit = srcSquare->bit();
+    if (!bit)
+      return;
+    if ((bit->gameTag() & 128) != colorTag)
+      return;
+
+    int pieceType = bit->gameTag() & 127;
+    ChessPiece piece = static_cast<ChessPiece>(pieceType);
+
+    _grid->forEachSquare([&](ChessSquare *dstSquare, int dx, int dy) {
+      if (srcSquare == dstSquare)
+        return;
+
+      Bit *dstBit = dstSquare->bit();
+      if (dstBit && ((dstBit->gameTag() & 128) == colorTag))
+        return;
+
+      bool valid = false;
+      switch (piece) {
+      case Pawn:
+        valid = canPawnMove(*srcSquare, *dstSquare, player);
+        break;
+      case Knight:
+        valid = canKnightMove(*srcSquare, *dstSquare);
+        break;
+      case King:
+        valid = canKingMove(*srcSquare, *dstSquare);
+        break;
+      default:
+        break;
+      }
+
+      if (valid)
+        moves.push_back(BitMove(srcSquare->getSquareIndex(),
+                                dstSquare->getSquareIndex(), piece));
+    });
+  });
+
+  return moves;
 }
 
 void Chess::stopGame() {
