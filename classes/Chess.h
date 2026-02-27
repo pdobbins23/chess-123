@@ -2,19 +2,9 @@
 
 #include "Game.h"
 #include "Grid.h"
+#include "Bitboard.h"
 
 constexpr int pieceSize = 80;
-
-enum ChessPiece
-{
-    NoPiece,
-    Pawn,
-    Knight,
-    Bishop,
-    Rook,
-    Queen,
-    King
-};
 
 class Chess : public Game
 {
@@ -44,6 +34,13 @@ private:
     Player* ownerAt(int x, int y) const;
     void FENtoBoard(const std::string& fen);
     char pieceNotation(int x, int y) const;
+
+    bool canPawnMove(ChessSquare &src, ChessSquare &dst, int player);
+    bool canKnightMove(ChessSquare &src, ChessSquare &dst);
+    bool canKingMove(ChessSquare &src, ChessSquare &dst);
+
+    BitboardElement knightMoves(int square);
+    BitboardElement kingMoves(int square);
 
     Grid* _grid;
 };

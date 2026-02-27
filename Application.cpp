@@ -68,7 +68,10 @@ namespace ClassGame {
                     int height = game->_gameOptions.rowY;
 
                     for(int y=0; y<height; y++) {
-                        ImGui::Text("%s", stateString.substr(y*stride,stride).c_str());
+                        size_t pos = y * stride;
+                        if (pos >= stateString.length()) break;
+                        size_t len = std::min((size_t)stride, stateString.length() - pos);
+                        ImGui::Text("%s", stateString.substr(pos, len).c_str());
                     }
                     ImGui::Text("Current Board State: %s", game->stateString().c_str());
                 }

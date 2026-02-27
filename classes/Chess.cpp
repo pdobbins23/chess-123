@@ -83,7 +83,9 @@ void Chess::FENtoBoard(const std::string &fen) {
       }
 
       if (piece != NoPiece) {
-        _grid->getSquare(col, row)->setBit(PieceForPlayer(player, piece));
+        Bit *bit = PieceForPlayer(player, piece);
+        bit->setPosition(_grid->getSquare(col, row)->getPosition());
+        _grid->getSquare(col, row)->setBit(bit);
       }
       col++;
     }
@@ -102,7 +104,110 @@ bool Chess::canBitMoveFrom(Bit &bit, BitHolder &src) {
 }
 
 bool Chess::canBitMoveFromTo(Bit &bit, BitHolder &src, BitHolder &dst) {
-  return true;
+  ChessSquare &srcSquare = static_cast<ChessSquare &>(src);
+  ChessSquare &dstSquare = static_cast<ChessSquare &>(dst);
+
+  int pieceType = bit.gameTag() & 127;
+  int player = (bit.gameTag() & 128) ? 1 : 0;
+
+  Bit *dstBit = dstSquare.bit();
+  if (dstBit) {
+    int dstPlayer = (dstBit->gameTag() & 128) ? 1 : 0;
+    if (dstPlayer == player)
+      return false;
+  }
+
+  switch (pieceType) {
+  case Pawn:
+    return canPawnMove(srcSquare, dstSquare, player);
+  case Knight:
+    return canKnightMove(srcSquare, dstSquare);
+  case King:
+    return canKingMove(srcSquare, dstSquare);
+  default:
+    return false;
+  }
+}
+
+bool Chess::canPawnMove(ChessSquare &src, ChessSquare &dst, int player) {
+  int srcCol = src.getColumn();
+  int srcRow = src.getRow();
+  int dstCol = dst.getColumn();
+  int dstRow = dst.getRow();
+
+  int direction = (player == 0) ? 1 : -1;
+  int startRank = (player == 0) ? 1 : 6;
+
+  if (dstCol == srcCol && dst.bit() == nullptr) {
+    if (dstRow == srcRow + direction)
+      return true;
+    if (srcRow == startRank && dstRow == srcRow + 2 * direction) {
+      ChessSquare *between = _grid->getSquare(srcCol, srcRow + direction);
+      if (between && between->bit() == nullptr)
+        return true;
+    }
+  }
+
+  if (abs(dstCol - srcCol) == 1 && dstRow == srcRow + direction) {
+    if (dst.bit() != nullptr)
+      return true;
+  }
+
+  return false;
+}
+
+BitboardElement Chess::knightMoves(int square) {
+  BitboardElement board;
+  int col = square % 8;
+  int row = square / 8;
+
+  const int offsets[8][2] = {
+      {-2, -1}, {-2, 1}, {-1, -2}, {-1, 2},
+      {1, -2},  {1, 2},  {2, -1},  {2, 1}};
+
+  for (auto &offset : offsets) {
+    int newCol = col + offset[0];
+    int newRow = row + offset[1];
+    if (newCol >= 0 && newCol < 8 && newRow >= 0 && newRow < 8)
+      board |= (1ULL << (newRow * 8 + newCol));
+  }
+
+  return board;
+}
+
+bool Chess::canKnightMove(ChessSquare &src, ChessSquare &dst) {
+  int srcIndex = src.getSquareIndex();
+  int dstIndex = dst.getSquareIndex();
+
+  BitboardElement moves = knightMoves(srcIndex);
+  return moves.getData() & (1ULL << dstIndex);
+}
+
+BitboardElement Chess::kingMoves(int square) {
+  BitboardElement board;
+  int col = square % 8;
+  int row = square / 8;
+
+  for (int dr = -1; dr <= 1; dr++) {
+    for (int dc = -1; dc <= 1; dc++) {
+      if (dr == 0 && dc == 0)
+        continue;
+      int newCol = col + dc;
+      int newRow = row + dr;
+      if (newCol >= 0 && newCol < 8 && newRow >= 0 && newRow < 8)
+        board |= (1ULL << (newRow * 8 + newCol));
+    }
+  }
+
+  return board;
+}
+
+bool Chess::canKingMove(ChessSquare &src, ChessSquare &dst) {
+  int srcIndex = src.getSquareIndex();
+  int dstIndex = dst.getSquareIndex();
+
+  BitboardElement moves = kingMoves(srcIndex);
+  return moves.getData() & (1ULL << dstIndex);
 }
 
 void Chess::stopGame() {
